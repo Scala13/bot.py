@@ -1,0 +1,62 @@
+import telebot
+from config import token
+import random
+import os
+
+# Подключение бота с использованием токена
+bot = telebot.TeleBot(token)
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    bot.reply_to(message, "Привет! Я твой Telegram бот. Напиши что-нибудь!")
+
+@bot.message_handler(commands=['hello'])
+def send_hello(message):
+    bot.reply_to(message, "Привет! Как дела?")
+
+@bot.message_handler(commands=['bye'])
+def send_bye(message):
+    bot.reply_to(message, "Пока! Удачи!")
+
+@bot.message_handler(commands=['mem'])
+def send_random_mem(message):
+    try:
+        image = random.choice(os.listdir("images"))  # Выбираем случайное изображение
+        with open(f'images/{image}', 'rb') as f:
+            bot.send_photo(message.chat.id, f)
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка при отправке мема: {e}")
+
+@bot.message_handler(commands=["ekologia"])
+def send_ekologia_mem(message):
+    try:
+        with open('ekologia/images/i (29).jpg', 'rb') as f:
+            bot.send_photo(message.chat.id, f)
+        bot.send_message(message.chat.id, "Напишите ваши ответы. Например 1(с)...")
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка при отправке изображения: {e}")
+
+@bot.message_handler(func=lambda message: is_valid_format(message.text))
+def handle_formatted_message(message):
+    number, char = parse_message(message.text)
+    if number is not None and char is not None:
+        bot.reply_to(message, f"Вы отправили: Число {number}, Символ {char}")
+    else:
+        bot.reply_to(message, "Сообщение должно быть в формате 'число(буква)', например: 1(a) или 2(b)")
+
+# Проверка формата сообщения
+def is_valid_format(text):
+    import re
+    # Регулярное выражение для формата "число(буква)"
+    return bool(re.match(r"^\d\([a-zA-Zа-яА-Я]\)$", text))
+
+# Разбор сообщения на число и символ
+def parse_message(text):
+    try:
+        number = int(text[0])  # Первый символ — это число
+        char = text[2]  # Третий символ — это буква
+        return number, char
+    except (ValueError, IndexError):
+        return None, None
+
+bot.infinity_polling(skip_pending=True)
